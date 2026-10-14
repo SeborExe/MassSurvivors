@@ -8,7 +8,16 @@ public class MassSurvivors : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput" });
+		PublicDependencyModuleNames.AddRange(new string[]
+		{
+			"Core", "CoreUObject", "Engine", "InputCore",
+			"MassCore",        // FMassFragment, FMassTag, FTransformFragment, FMassEntityHandle
+			"MassEntity",      // EntityManager, procesory, query
+			"MassCommon",
+			"MassSimulation",
+			"MassSpawner",
+			"MassSignals"
+		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 
