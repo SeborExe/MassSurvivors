@@ -73,3 +73,12 @@ Plugins/**/Intermediate/*
 
 # Cache files for the editor to use
 DerivedDataCache/*
+
+# Visual Studio solution (nowy format)
+*.slnx
+
+# Visual Studio solution (nowy format)
+*.slnx
+
+# Rider
+.idea/
