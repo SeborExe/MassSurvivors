@@ -22,6 +22,9 @@ struct FMSEnemyConfigFragment : public FMassConstSharedFragment
     
     UPROPERTY(EditAnywhere, meta = (ClampMin = "0.01"))
     float AttackInterval = 1.f; // sekundy między atakami
+    
+    UPROPERTY(EditAnywhere)
+    FColor DebugColor = FColor::Red;
 };
 
 USTRUCT()
