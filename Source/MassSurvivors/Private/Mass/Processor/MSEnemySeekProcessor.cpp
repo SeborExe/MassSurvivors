@@ -7,6 +7,7 @@
 #include "Mass/EntityFragments.h"
 #include "Mass/Processor/MSPlayerLocationProcessor.h"
 #include "Subsystem/MSPlayerSubsystem.h"
+#include "Types/MSProcessorGroups.h"
 
 UMSEnemySeekProcessor::UMSEnemySeekProcessor() : EntityQuery(*this)
 {
@@ -16,6 +17,7 @@ UMSEnemySeekProcessor::UMSEnemySeekProcessor() : EntityQuery(*this)
 	ProcessingPhase = EMassProcessingPhase::PrePhysics;
 
 	// Jawna kolejność: najpierw aktualna pozycja gracza, potem kierunek do niej
+	ExecutionOrder.ExecuteInGroup = MSProcessorGroups::Steering;
 	ExecutionOrder.ExecuteAfter.Add(UMSPlayerLocationProcessor::StaticClass()->GetFName());
 }
 

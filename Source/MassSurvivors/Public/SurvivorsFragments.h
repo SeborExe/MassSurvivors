@@ -25,6 +25,9 @@ struct FMSEnemyConfigFragment : public FMassConstSharedFragment
     
     UPROPERTY(EditAnywhere)
     FColor DebugColor = FColor::Red;
+    
+    UPROPERTY(EditAnywhere, meta = (ClampMin = "1.0"))
+    float CollisionRadius = 50.f;
 };
 
 USTRUCT()

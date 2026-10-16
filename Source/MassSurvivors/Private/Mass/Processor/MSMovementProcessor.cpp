@@ -5,7 +5,7 @@
 #include "MassExecutionContext.h"
 #include "SurvivorsFragments.h"
 #include "Mass/EntityFragments.h"
-#include "Mass/Processor/MSEnemySeekProcessor.h"
+#include "Types/MSProcessorGroups.h"
 
 UMSMovementProcessor::UMSMovementProcessor() : EntityQuery(*this)
 {
@@ -14,7 +14,7 @@ UMSMovementProcessor::UMSMovementProcessor() : EntityQuery(*this)
 				   | EProcessorExecutionFlags::Client);
 	ProcessingPhase = EMassProcessingPhase::PrePhysics;
 	
-	ExecutionOrder.ExecuteAfter.Add(UMSEnemySeekProcessor::StaticClass()->GetFName());
+	ExecutionOrder.ExecuteAfter.Add(MSProcessorGroups::Steering);
 }
 
 void UMSMovementProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager)

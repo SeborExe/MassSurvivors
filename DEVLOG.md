@@ -13,5 +13,15 @@ Day 2
 
 
 
+* procesor bez query może zostać pominięty przez query-based pruning; rozwiązanie: ShouldAllowQueryBasedPruning() → false,
+* deklaracje dostępu chronią przed równoległym wykonaniem, ale kolejność ustala się jawnie (ExecuteAfter/ExecuteBefore),
+* debugowanie łańcucha procesorów: sprawdzanie danych pośrednich (prędkość) w debuggerze, żeby zawęzić, gdzie leży błąd.
+
+
+
+Day 3
+
+
+
 
 
