@@ -54,7 +54,7 @@ void AMSEnemySpawner::SpawnEnemyGroup(FMassEntityManager& EntityManager, const F
 	{
 		// Losowy punkt na okręgu: losowy kąt, a z niego cos/sin
 		const float Angle = FMath::FRandRange(0.f, 2.f * PI);
-		const FVector Location(FMath::Cos(Angle) * SpawnRadius, FMath::Sin(Angle) * SpawnRadius, 0.f);
+		const FVector Location(FMath::Cos(Angle) * FMath::FRandRange(0.7f, 1.f) * SpawnRadius, FMath::Sin(Angle) * SpawnRadius, 0.f);
 
 		FTransformFragment& TransformFrag = EntityManager.GetFragmentDataChecked<FTransformFragment>(Entity);
 		TransformFrag.SetTransform(FTransform(Location));

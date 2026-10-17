@@ -6,6 +6,11 @@
 #include "SurvivorsFragments.h"
 #include "Mass/EntityFragments.h"
 
+static TAutoConsoleVariable<bool> CVarMSDebugDraw(
+	TEXT("ms.DebugDraw"),
+	true,
+	TEXT("Włącza/wyłącza rysowanie przeciwników jako punktów debug."));
+
 UMSDebugDrawProcessor::UMSDebugDrawProcessor() : EntityQuery(*this)
 {
 	ExecutionFlags = (int32)(EProcessorExecutionFlags::Standalone
@@ -27,6 +32,11 @@ void UMSDebugDrawProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager
 
 void UMSDebugDrawProcessor::Execute(FMassEntityManager& EntityManager, FMassExecutionContext& Context)
 {
+	if (!CVarMSDebugDraw.GetValueOnGameThread())
+	{
+		return;
+	}
+	
 	UWorld* World = Context.GetWorld();
 	if (!World) return;
 	

@@ -1,107 +1,124 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #include "Mass/Processor/MSEnemySeparationProcessor.h"
 
 #include "MassExecutionContext.h"
 #include "SurvivorsFragments.h"
 #include "Mass/EntityFragments.h"
 #include "Mass/Processor/MSEnemySeekProcessor.h"
+#include "Subsystem/MSSpatialGridSubsystem.h"
 #include "Types/MSProcessorGroups.h"
+#include "Types/MSStats.h"
 
-// statystyka do pomiaru (thread-safe, działa też na workerach)
-DECLARE_STATS_GROUP(TEXT("MassSurvivors"), STATGROUP_MassSurvivors, STATCAT_Advanced);
 DECLARE_CYCLE_STAT(TEXT("Separation"), STAT_MS_Separation, STATGROUP_MassSurvivors);
+DECLARE_DWORD_COUNTER_STAT(TEXT("Separation pair checks"), STAT_MS_SeparationChecks, STATGROUP_MassSurvivors);
 
-UMSEnemySeparationProcessor::UMSEnemySeparationProcessor() : EntityQuery(*this)
+namespace
 {
-	ExecutionFlags = (int32)(EProcessorExecutionFlags::Standalone
-					   | EProcessorExecutionFlags::Server
-					   | EProcessorExecutionFlags::Client);
-	ProcessingPhase = EMassProcessingPhase::PrePhysics;
+    constexpr float SeparationStrength = 600.f;
+    constexpr int32 MaxNeighbors = 12;
+}
 
-	// W grupie sterowania, ale PO pościgu: Seek ustawia prędkość, separacja ją koryguje
-	ExecutionOrder.ExecuteInGroup = MSProcessorGroups::Steering;
-	ExecutionOrder.ExecuteAfter.Add(UMSEnemySeekProcessor::StaticClass()->GetFName());
+UMSEnemySeparationProcessor::UMSEnemySeparationProcessor()
+    : EntityQuery(*this)
+{
+    ExecutionFlags = (int32)(EProcessorExecutionFlags::Standalone
+                           | EProcessorExecutionFlags::Server
+                           | EProcessorExecutionFlags::Client);
+    ProcessingPhase = EMassProcessingPhase::PrePhysics;
+
+    // W grupie sterowania, po pościgu: Seek ustawia prędkość, separacja ją koryguje
+    ExecutionOrder.ExecuteInGroup = MSProcessorGroups::Steering;
+    ExecutionOrder.ExecuteAfter.Add(UMSEnemySeekProcessor::StaticClass()->GetFName());
 }
 
 void UMSEnemySeparationProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager)
 {
-	EntityQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadOnly);
-	EntityQuery.AddRequirement<FMSVelocityFragment>(EMassFragmentAccess::ReadWrite);
-	
-	EntityQuery.AddConstSharedRequirement<FMSEnemyConfigFragment>();
-	EntityQuery.AddTagRequirement<FMSEnemyTag>(EMassFragmentPresence::All);
-	EntityQuery.AddTagRequirement<FMSDeadTag>(EMassFragmentPresence::None);
+    EntityQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadOnly);
+    EntityQuery.AddRequirement<FMSVelocityFragment>(EMassFragmentAccess::ReadWrite);
+    EntityQuery.AddConstSharedRequirement<FMSEnemyConfigFragment>();
+    EntityQuery.AddTagRequirement<FMSEnemyTag>(EMassFragmentPresence::All);
+    EntityQuery.AddTagRequirement<FMSDeadTag>(EMassFragmentPresence::None);
+
+    // Grid tylko czytamy. Zapisuje go GridBuildProcessor, który wykonuje się wcześniej.
+    EntityQuery.AddSubsystemRequirement<UMSSpatialGridSubsystem>(EMassFragmentAccess::ReadOnly);
 }
 
 void UMSEnemySeparationProcessor::Execute(FMassEntityManager& EntityManager, FMassExecutionContext& Context)
 {
-	SCOPE_CYCLE_COUNTER(STAT_MS_Separation);
+    SCOPE_CYCLE_COUNTER(STAT_MS_Separation);
 
-	// Przejście 1: snapshot pozycji wszystkich przeciwników
-	Positions.Reset();
-	Positions.Reserve(EntityQuery.GetNumMatchingEntities(EntityManager));
-	
-	EntityQuery.ForEachEntityChunk(Context, [this](FMassExecutionContext& Context)
-	{
-		// TODO (ty): dopisz pozycje wszystkich encji z chunka do Positions
-		const TConstArrayView<FTransformFragment> Transforms = Context.GetFragmentView<FTransformFragment>();
-		for (int32 i = 0; i < Context.GetNumEntities(); ++i)
-		{
-			const FVector EntityPos = Transforms[i].GetTransform().GetLocation();
-			Positions.Add(EntityPos);
-		}
-	});
+    // Każdy chunk pisze tylko do prędkości własnych encji, a grid tylko czyta,
+    // więc chunki można bezpiecznie przetwarzać równolegle
+    EntityQuery.ParallelForEachEntityChunk(Context, [](FMassExecutionContext& Context)
+    {
+        const UMSSpatialGridSubsystem& Grid = Context.GetSubsystemChecked<UMSSpatialGridSubsystem>();
+        const FMSEnemyConfigFragment& Config = Context.GetConstSharedFragment<FMSEnemyConfigFragment>();
 
-	constexpr float SeparationStrength = 600.f;
-	int32 GlobalIndex = 0;
-	
-	// Przejście 2: separacja
-	EntityQuery.ForEachEntityChunk(Context, [this, &GlobalIndex](FMassExecutionContext& Context)
-	{
-		const FMSEnemyConfigFragment& Config = Context.GetConstSharedFragment<FMSEnemyConfigFragment>();
-		const TConstArrayView<FTransformFragment> Transforms = Context.GetFragmentView<FTransformFragment>();
-		const TArrayView<FMSVelocityFragment> Velocities = Context.GetMutableFragmentView<FMSVelocityFragment>();
+        const TConstArrayView<FTransformFragment> Transforms = Context.GetFragmentView<FTransformFragment>();
+        const TArrayView<FMSVelocityFragment> Velocities = Context.GetMutableFragmentView<FMSVelocityFragment>();
 
-		// Raz na chunk: promień do kwadratu (patrz niżej, po co)
-		const float Radius = Config.CollisionRadius;
-		const float RadiusSq = Radius * Radius;
+        const float Radius = Config.CollisionRadius;
+        const float RadiusSq = Radius * Radius;
 
-		for (int32 i = 0; i < Context.GetNumEntities(); ++i, ++GlobalIndex)
-		{
-			const FVector MyPos = Transforms[i].GetTransform().GetLocation();
-			FVector Push = FVector::ZeroVector;
-			
-			for (int32 OtherIndex = 0; OtherIndex < Positions.Num(); ++OtherIndex)
-			{
-				// (1) Pomijamy siebie po INDEKSIE, a nie po odległości
-				if (OtherIndex == GlobalIndex)
-				{
-					continue;
-				}
+        // Licznik LOKALNY dla chunka: każdy wątek ma swój, brak data race
+        int32 NumChecks = 0;
 
-				// (2) Kierunek OD sąsiada DO mnie = ja − sąsiad
-				FVector Offset = MyPos - Positions[OtherIndex];
-				Offset.Z = 0.f;
+        for (int32 i = 0; i < Context.GetNumEntities(); ++i)
+        {
+            const FMassEntityHandle Self = Context.GetEntity(i);
+            const FVector MyPos = Transforms[i].GetTransform().GetLocation();
+            const FIntPoint MyCell = Grid.GetCellCoords(MyPos);
 
-				// (3) Porównanie kwadratów odległości: bez pierwiastka dla dalekich encji
-				const float DistSq = Offset.SizeSquared();
-				if (DistSq >= RadiusSq || DistSq < KINDA_SMALL_NUMBER)
-				{
-					continue;
-				}
+            FVector Push = FVector::ZeroVector;
+            int32 NumNeighbors = 0;
 
-				// (4) Pierwiastek tylko dla prawdziwych sąsiadów
-				const float Dist = FMath::Sqrt(DistSq);
-				const float Strength = 1.f - Dist / Radius; // 1 przy styku, 0 na krawędzi promienia
+            // Własna komórka + 8 sąsiednich (rozmiar komórki >= promień kolizji)
+            for (int32 DY = -1; DY <= 1 && NumNeighbors < MaxNeighbors; ++DY)
+            {
+                for (int32 DX = -1; DX <= 1 && NumNeighbors < MaxNeighbors; ++DX)
+                {
+                    const TArray<FMSGridEntry>* Cell = Grid.FindCell(MyCell + FIntPoint(DX, DY));
+                    if (!Cell)
+                    {
+                        continue;
+                    }
 
-				// (5) Offset / Dist = znormalizowany kierunek, bez drugiego pierwiastka
-				Push += (Offset / Dist) * Strength;
-			}
+                    for (const FMSGridEntry& Other : *Cell)
+                    {
+                        // Pomijamy siebie po handle'u: działa niezależnie od kolejności chunków
+                        if (Other.Entity == Self)
+                        {
+                            continue;
+                        }
 
-			FVector& Velocity = Velocities[i].Value;
-			Velocity += Push * SeparationStrength;
-			Velocity = Velocity.GetClampedToMaxSize(Config.MovementSpeed);
-		}
-	});
+                        ++NumChecks;
+
+                        FVector Offset = MyPos - Other.Position; // od sąsiada do mnie
+                        Offset.Z = 0.f;
+
+                        const float DistSq = Offset.SizeSquared();
+                        if (DistSq >= RadiusSq || DistSq < KINDA_SMALL_NUMBER)
+                        {
+                            continue;
+                        }
+
+                        const float Dist = FMath::Sqrt(DistSq);
+                        const float Strength = 1.f - Dist / Radius;
+                        Push += (Offset / Dist) * Strength;
+
+                        if (++NumNeighbors >= MaxNeighbors)
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            FVector& Velocity = Velocities[i].Value;
+            Velocity += Push * SeparationStrength;
+            Velocity = Velocity.GetClampedToMaxSize(Config.MovementSpeed);
+        }
+
+        // Raz na chunk; statystyki są bezpieczne między wątkami
+        INC_DWORD_STAT_BY(STAT_MS_SeparationChecks, NumChecks);
+    });
 }
