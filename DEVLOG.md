@@ -23,5 +23,16 @@ Day 3
 
 
 
+* statystyka mierzy tylko to, co oznaczysz; gdy stat i Insights się nie zgadzają, ufaj Insights,
+* „Game” w stat unit obejmuje też czekanie na workery Mass,
+* subsystem z kontekstu jest dostępny tylko w trakcie iteracji query,
+* budowy gridu nie można zrównoleglić (wspólna struktura), a separację można (każdy chunk pisze tylko do swoich danych).
+
+
+
+Day 4
+
+
+
 
 

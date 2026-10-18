@@ -28,6 +28,15 @@ struct FMSEnemyConfigFragment : public FMassConstSharedFragment
     
     UPROPERTY(EditAnywhere, meta = (ClampMin = "1.0"))
     float CollisionRadius = 50.f;
+    
+    UPROPERTY(EditAnywhere, Category = "Visual")
+    TObjectPtr<UStaticMesh> Mesh;
+
+    UPROPERTY(EditAnywhere, Category = "Visual")
+    TObjectPtr<UMaterialInterface> Material;
+
+    UPROPERTY(EditAnywhere, Category = "Visual", meta = (ClampMin = "0.01"))
+    float MeshScale = 1.f;
 };
 
 USTRUCT()
