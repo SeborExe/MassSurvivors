@@ -69,8 +69,7 @@ void UMSRepresentationProcessor::InitializeInternal(UObject& Owner, const TShare
 void UMSRepresentationProcessor::ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager)
 {
 	EntityQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadOnly);
-	EntityQuery.AddConstSharedRequirement<FMSEnemyConfigFragment>();
-	EntityQuery.AddTagRequirement<FMSEnemyTag>(EMassFragmentPresence::All);
+	EntityQuery.AddConstSharedRequirement<FMSVisualFragment>();
 	EntityQuery.AddTagRequirement<FMSDeadTag>(EMassFragmentPresence::None);
 }
 
@@ -93,7 +92,7 @@ void UMSRepresentationProcessor::Execute(FMassEntityManager& EntityManager, FMas
 	EntityQuery.ForEachEntityChunk(Context, [this, MeshActor](FMassExecutionContext& Context)
 	{
 		// Raz na chunk: config, a więc mesh i ISM, są wspólne dla całego chunka
-		const FMSEnemyConfigFragment& Config = Context.GetConstSharedFragment<FMSEnemyConfigFragment>();
+		const FMSVisualFragment& Config = Context.GetConstSharedFragment<FMSVisualFragment>();
 		if (!Config.Mesh)
 		{
 			return;

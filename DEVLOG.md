@@ -34,5 +34,13 @@ Day 4
 
 
 
+* Różnica między ForEachEntityChunk a ParallelForEachEntityChunk i pięć zasad dla lambdy równoległej, flaga „Used with Instanced Static Meshes” w materiałach, zebranie danych z wielu chunków i jedna aktualizacja ISM na koniec.
+
+
+
+Day 5
+
+
+
 
 

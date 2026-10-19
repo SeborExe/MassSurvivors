@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "Types/MSDefinitions.h"
 #include "MSPlayerPawn.generated.h"
 
 class UStaticMeshComponent;
@@ -22,6 +23,8 @@ class MASSSURVIVORS_API AMSPlayerPawn : public APawn
 public:
 
 	AMSPlayerPawn();
+	
+	const FMSWeaponDefinition& GetWeapon() const { return Weapon; }
 	
 protected:
 	virtual void NotifyControllerChanged() override;
@@ -47,4 +50,7 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> MoveAction;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	FMSWeaponDefinition Weapon;
 };

@@ -47,6 +47,9 @@ public:
 						 FMath::FloorToInt(Position.Y / CellSize));
 	}
 	
+	// Zwraca najbliższą encję w promieniu MaxRange albo nieprawidłowy handle, jeśli nikogo nie ma
+	FMassEntityHandle FindNearest(const FVector& Position, FVector& OutPosition, float MaxRange) const;
+	
 private:
 	// Musi być >= największego CollisionRadius spośród wszystkich typów przeciwników
 	float CellSize = 100.f;

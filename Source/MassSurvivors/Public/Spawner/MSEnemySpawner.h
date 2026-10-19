@@ -8,6 +8,21 @@
 #include "GameFramework/Actor.h"
 #include "MSEnemySpawner.generated.h"
 
+USTRUCT()
+struct FMSEnemyTypeDefinition
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere)
+	FMSEnemyConfigFragment Config;
+
+	UPROPERTY(EditAnywhere)
+	FMSVisualFragment Visual;
+
+	UPROPERTY(EditAnywhere, meta = (ClampMin = "0"))
+	int32 Count = 2000;
+};
+
 UCLASS()
 class MASSSURVIVORS_API AMSEnemySpawner : public AActor
 {
@@ -20,16 +35,10 @@ public:
 protected:
 
 	virtual void BeginPlay() override;
-	void SpawnEnemyGroup(FMassEntityManager& EntityManager, const FMassArchetypeHandle& Archetype, const FMSEnemyConfigFragment& Config, int32 Count);
+	void SpawnEnemyGroup(FMassEntityManager& EntityManager, const FMassArchetypeHandle& Archetype, const FMSEnemyTypeDefinition& Type);
 
 	UPROPERTY(EditAnywhere, Category = "Spawning")
-	FMSEnemyConfigFragment FastEnemyConfig;   // ustaw w edytorze: mało HP, duża szybkość
-
-	UPROPERTY(EditAnywhere, Category = "Spawning")
-	FMSEnemyConfigFragment TankEnemyConfig;   // dużo HP, mała szybkość
-
-	UPROPERTY(EditAnywhere, Category = "Spawning")
-	int32 CountPerType = 2000;
+	TArray<FMSEnemyTypeDefinition> EnemyTypes;
 
 	UPROPERTY(EditAnywhere, Category = "Spawning")
 	float SpawnRadius = 2000.f;

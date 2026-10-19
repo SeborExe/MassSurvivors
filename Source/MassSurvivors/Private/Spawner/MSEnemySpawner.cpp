@@ -28,27 +28,31 @@ void AMSEnemySpawner::BeginPlay()
 		FMSHealthFragment::StaticStruct(),
 		FMSAttackTimerFragment::StaticStruct(),
 		FMSEnemyTag::StaticStruct(),
-		FMSEnemyConfigFragment::StaticStruct()
+		FMSEnemyConfigFragment::StaticStruct(),
+		FMSVisualFragment::StaticStruct()
 	});
 
 	// Jeden archetyp, dwa różne configi
-	SpawnEnemyGroup(EntityManager, EnemyArchetype, FastEnemyConfig, CountPerType);
-	SpawnEnemyGroup(EntityManager, EnemyArchetype, TankEnemyConfig, CountPerType);
+	for (const FMSEnemyTypeDefinition& Type : EnemyTypes)
+	{
+		SpawnEnemyGroup(EntityManager, EnemyArchetype, Type);
+	}
 }
 
-void AMSEnemySpawner::SpawnEnemyGroup(FMassEntityManager& EntityManager, const FMassArchetypeHandle& Archetype,
-	const FMSEnemyConfigFragment& Config, int32 Count)
+void AMSEnemySpawner::SpawnEnemyGroup(FMassEntityManager& EntityManager, const FMassArchetypeHandle& Archetype, const FMSEnemyTypeDefinition& Type)
 {
-	// Deduplikacja po wartości: dla identycznego configu dostaniemy tę samą instancję
-	const FConstSharedStruct& SharedConfig = EntityManager.GetOrCreateConstSharedFragment(Config);
+	// Dwa niezależne const shared fragmenty, każdy deduplikowany osobno
+	const FConstSharedStruct& SharedConfig = EntityManager.GetOrCreateConstSharedFragment(Type.Config);
+	const FConstSharedStruct& SharedVisual = EntityManager.GetOrCreateConstSharedFragment(Type.Visual);
 
 	FMassArchetypeSharedFragmentValues SharedValues;
 	SharedValues.Add(SharedConfig);
-	SharedValues.Sort(); // Mass wymaga posortowanych wartości
+	SharedValues.Add(SharedVisual);
+	SharedValues.Sort();
 
 	TArray<FMassEntityHandle> Entities;
 	TSharedRef<FMassEntityManager::FEntityCreationContext> CreationContext =
-		EntityManager.BatchCreateEntities(Archetype, SharedValues, Count, Entities);
+		EntityManager.BatchCreateEntities(Archetype, SharedValues, Type.Count, Entities);
 
 	for (const FMassEntityHandle Entity : Entities)
 	{
@@ -60,6 +64,6 @@ void AMSEnemySpawner::SpawnEnemyGroup(FMassEntityManager& EntityManager, const F
 		TransformFrag.SetTransform(FTransform(Location));
 
 		FMSHealthFragment& HealthFrag = EntityManager.GetFragmentDataChecked<FMSHealthFragment>(Entity);
-		HealthFrag.Health = Config.MaxHealth;
+		HealthFrag.Health = Type.Config.MaxHealth;
 	}
 }
