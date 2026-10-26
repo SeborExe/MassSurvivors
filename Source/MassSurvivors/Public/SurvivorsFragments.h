@@ -99,7 +99,7 @@ struct FMSLifeTimeFragment : public FMassFragment
     GENERATED_BODY()
     
     UPROPERTY()
-    float RemainingTime = 0.f;
+    float RemainingTime = -1.f;
 };
 
 USTRUCT()
