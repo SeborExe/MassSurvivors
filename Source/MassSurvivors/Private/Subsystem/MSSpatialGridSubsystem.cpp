@@ -61,3 +61,34 @@ FMassEntityHandle UMSSpatialGridSubsystem::FindNearest(const FVector& Position, 
 
     return Best;
 }
+
+FMassEntityHandle UMSSpatialGridSubsystem::FindFirstOverlap(const FVector& Position, float Radius) const
+{
+    ensureMsgf(Radius <= CellSize, TEXT("Cell size smaller than radius"));
+    const FIntPoint Center = GetCellCoords(Position);
+    
+    // 9 komórek: DX i DY przyjmują wartości -1, 0, 1
+    for (int32 DY = -1; DY <= 1; ++DY)
+    {
+        for (int32 DX = -1; DX <= 1; ++DX)
+        {
+            const TArray<FMSGridEntry>* Cell = FindCell(Center + FIntPoint(DX, DY));
+            if (!Cell)
+            {
+                continue; // w tej komórce nikogo nie ma
+            }
+
+            for (const FMSGridEntry& Entry : *Cell)
+            {
+                const float DistSq = FVector::DistSquared2D(Position, Entry.Position);
+                const float RadiusSq = FMath::Square(Radius + Entry.Radius);
+                if (DistSq < RadiusSq)
+                {
+                    return Entry.Entity;
+                }
+            }
+        }
+    }
+
+    return FMassEntityHandle();
+}

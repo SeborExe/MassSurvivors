@@ -13,6 +13,7 @@ struct FMSGridEntry
 {
 	FMassEntityHandle Entity; // do pomijania samego siebie, niezależnie od kolejności chunków
 	FVector Position;
+	float Radius = 0.f;
 };
 
 UCLASS()
@@ -49,6 +50,7 @@ public:
 	
 	// Zwraca najbliższą encję w promieniu MaxRange albo nieprawidłowy handle, jeśli nikogo nie ma
 	FMassEntityHandle FindNearest(const FVector& Position, FVector& OutPosition, float MaxRange) const;
+	FMassEntityHandle FindFirstOverlap(const FVector& Position, float Radius) const;
 	
 private:
 	// Musi być >= największego CollisionRadius spośród wszystkich typów przeciwników

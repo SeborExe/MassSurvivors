@@ -33,6 +33,7 @@ void UMSSpatialGridBuildProcessor::ConfigureQueries(const TSharedRef<FMassEntity
     EntityQuery.AddRequirement<FTransformFragment>(EMassFragmentAccess::ReadOnly);
     EntityQuery.AddTagRequirement<FMSEnemyTag>(EMassFragmentPresence::All);
     EntityQuery.AddTagRequirement<FMSDeadTag>(EMassFragmentPresence::None);
+    //EntityQuery.AddConstSharedRequirement<FMSEnemyConfigFragment>();
 
     // Ten procesor ZAPISUJE grid
     EntityQuery.AddSubsystemRequirement<UMSSpatialGridSubsystem>(EMassFragmentAccess::ReadWrite);
@@ -49,6 +50,9 @@ void UMSSpatialGridBuildProcessor::Execute(FMassEntityManager& EntityManager, FM
 
     UMSSpatialGridSubsystem& Grid = *GridSubsystem;
     Grid.ResetGrid();
+    
+    /*const FMSEnemyConfigFragment& Config = Context.GetConstSharedFragment<FMSEnemyConfigFragment>();
+    float CollisionRadius = Config.CollisionRadius;*/
     
     EntityQuery.ForEachEntityChunk(Context, [&Grid](FMassExecutionContext& Context)
     {
