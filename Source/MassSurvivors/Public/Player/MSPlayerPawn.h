@@ -23,6 +23,7 @@ class MASSSURVIVORS_API AMSPlayerPawn : public APawn
 public:
 
 	AMSPlayerPawn();
+	void AddExperience(int32 Amount);
 	
 	const FMSWeaponDefinition& GetWeapon() const { return Weapon; }
 	
@@ -32,6 +33,8 @@ protected:
 
 private:
 	void Move(const FInputActionValue& Value);
+	
+	int32 Experience = 0;
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UStaticMeshComponent> Mesh;

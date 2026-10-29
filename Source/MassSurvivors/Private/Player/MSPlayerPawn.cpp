@@ -57,3 +57,14 @@ void AMSPlayerPawn::Move(const FInputActionValue& Value)
 	AddMovementInput(FVector::ForwardVector, Input.Y);
 	AddMovementInput(FVector::RightVector, Input.X);
 }
+
+void AMSPlayerPawn::AddExperience(int32 Amount)
+{
+	Experience += Amount;
+
+	// Tymczasowy podgląd na ekranie; klucz 1 sprawia, że komunikat się nadpisuje zamiast mnożyć
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(1, 2.f, FColor::Green, FString::Printf(TEXT("XP: %d"), Experience));
+	}
+}

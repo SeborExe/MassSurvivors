@@ -4,6 +4,7 @@
 #include "Mass/Processor/MSPlayerLocationProcessor.h"
 
 #include "Kismet/GameplayStatics.h"
+#include "Player/MSPlayerPawn.h"
 #include "Subsystem/MSPlayerSubsystem.h"
 
 UMSPlayerLocationProcessor::UMSPlayerLocationProcessor()
@@ -33,9 +34,18 @@ void UMSPlayerLocationProcessor::Execute(FMassEntityManager& EntityManager, FMas
 	UMSPlayerSubsystem* PlayerSubsystem = World->GetSubsystem<UMSPlayerSubsystem>();
 	if (!PlayerSubsystem) return;
 
-	if (const APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(World, 0))
+	if (APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(World, 0))
 	{
 		PlayerSubsystem->SetPlayerLocation(PlayerPawn->GetActorLocation());
+
+		// Pomost Mass → gameplay: doświadczenie zebrane przez procesory trafia do actora na game thread
+		if (const int32 Experience = PlayerSubsystem->ConsumePendingExperience(); Experience > 0)
+		{
+			if (AMSPlayerPawn* MSPawn = Cast<AMSPlayerPawn>(PlayerPawn))
+			{
+				MSPawn->AddExperience(Experience);
+			}
+		}
 	}
 	else
 	{
