@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "MassObserverProcessor.h"
+#include "SurvivorsFragments.h"
 #include "MSEnemyDeathObserver.generated.h"
 
 UCLASS()
@@ -15,9 +16,18 @@ public:
 	UMSEnemyDeathObserver();
 	
 protected:
+	virtual void InitializeInternal(UObject& Owner, const TSharedRef<FMassEntityManager>& EntityManager) override;
 	virtual void ConfigureQueries(const TSharedRef<FMassEntityManager>& EntityManager) override;
 	virtual void Execute(FMassEntityManager& EntityManager, FMassExecutionContext& Context) override;
 	
 private:
 	FMassEntityQuery EntityQuery;
+	
+	FMassArchetypeHandle OrbArchetype;
+
+	// Dane kulki przygotowane raz, przy inicjalizacji
+	UPROPERTY()
+	FMSOrbConfigFragment OrbConfig;
+	UPROPERTY()
+	FMSVisualFragment OrbVisual;
 };

@@ -31,6 +31,9 @@ struct FMSEnemyConfigFragment : public FMassConstSharedFragment
     
     UPROPERTY(EditAnywhere, meta = (ClampMin = "1.0"))
     float CollisionRadius = 50.f;
+    
+    UPROPERTY(EditAnywhere, meta = (ClampMin = "0"))
+    int32 ExperienceValue = 10;
 };
 
 USTRUCT()
@@ -64,6 +67,21 @@ struct FMSProjectileConfigFragment : public FMassConstSharedFragment
     
     UPROPERTY(EditAnywhere, meta = (ClampMin = "0.01"))
     float LifeTime = 5.f;
+};
+
+USTRUCT()
+struct FMSOrbConfigFragment : public FMassConstSharedFragment
+{
+    GENERATED_BODY()
+    
+    UPROPERTY(EditAnywhere, meta = (ClampMin = "0.01"))
+    float PickupRadius = 75.f;
+    
+    UPROPERTY(EditAnywhere, meta = (ClampMin = "0.01"))
+    float MagnetRadius = 500.f;
+    
+    UPROPERTY(EditAnywhere, meta = (ClampMin = "0.01"))
+    float MagnetSpeed = 900.f;
 };
 
 USTRUCT()
@@ -103,6 +121,15 @@ struct FMSLifeTimeFragment : public FMassFragment
 };
 
 USTRUCT()
+struct FMSExperienceFragment : public FMassFragment
+{
+    GENERATED_BODY()
+    
+    UPROPERTY()
+    int32 Amount = 10.f;
+};
+
+USTRUCT()
 struct FMSDeadTag : public FMassTag
 {
     GENERATED_BODY()
@@ -116,6 +143,13 @@ struct FMSEnemyTag : public FMassTag
 
 USTRUCT()
 struct FMSProjectileTag : public FMassTag
+{
+    GENERATED_BODY()
+    
+};
+
+USTRUCT()
+struct FMSOrbTag : public FMassTag
 {
     GENERATED_BODY()
     

@@ -16,7 +16,8 @@ public class MassSurvivors : ModuleRules
 			"MassCommon",
 			"MassSimulation",
 			"MassSpawner",
-			"MassSignals"
+			"MassSignals",
+			"DeveloperSettings"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { "EnhancedInput" });
